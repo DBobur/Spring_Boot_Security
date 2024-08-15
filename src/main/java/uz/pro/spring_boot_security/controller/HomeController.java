@@ -17,6 +17,7 @@ public class HomeController {
     public String userPage(){ return "User page";}
 
     @PreAuthorize("hasRole('ADMIN')")
+    //@PreAuthorize("hasAnyAuthority('','')")
     @GetMapping("/admin")
     public String adminPage(){ return "Admin page";}
 

@@ -9,6 +9,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -27,6 +28,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import uz.pro.spring_boot_security.dto.AppErrorDto;
+import uz.pro.spring_boot_security.service.user.AuthService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,6 +41,7 @@ public class SecurityConfig {
 
     private final ObjectMapper objectMapper;
     private final JwtTokenUtil jwtTokenUtil;
+    private final AuthService authService;
 
     @Bean
     public AuthenticationEntryPoint authenticationEntryPoint(){
@@ -92,11 +95,11 @@ public class SecurityConfig {
                 .authenticationEntryPoint(authenticationEntryPoint())
                 .accessDeniedHandler(accessDeniedHandler())
                 .and()
-                .addFilterBefore(new JwtTokenFilter(jwtTokenUtil,userDetailsService()), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new JwtTokenFilter(jwtTokenUtil,authService), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
-    @Bean
+    /*@Bean
     public UserDetailsService userDetailsService(){
         UserDetails user = User.builder()
                 .username("user")
@@ -114,23 +117,24 @@ public class SecurityConfig {
                 .roles("MANAGER")
                 .build();
         return new InMemoryUserDetailsManager(user,admin,manager);
+        return
     }
 
-    @Bean
-    public AuthenticationProvider authenticationProvider(){
-        var daoAuthenticationProvider = new DaoAuthenticationProvider();
-        daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
-        daoAuthenticationProvider.setUserDetailsService(userDetailsService());
-        return daoAuthenticationProvider;
-    }
+//    @Bean
+//    public AuthenticationProvider authenticationProvider(){
+//        var daoAuthenticationProvider = new DaoAuthenticationProvider();
+//        daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
+//        daoAuthenticationProvider.setUserDetailsService(userDetailsService());
+//        return daoAuthenticationProvider;
+//    }
 
     @Bean
-    /*public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
-    }*/
+    }
     public AuthenticationManager authenticationManager(){
         return new ProviderManager(authenticationProvider());
-    }
+    }*/
 
     @Bean
     public PasswordEncoder passwordEncoder(){
@@ -152,5 +156,14 @@ public class SecurityConfig {
         /*source.registerCorsConfiguration("/api/v2/**",corsConfiguration2);
         source.registerCorsConfiguration("/api/v3/**",corsConfiguration3);*/
         return source;
+    }
+
+    @Bean
+    public AuthenticationManager authManager(HttpSecurity httpSecurity) throws Exception {
+        AuthenticationManagerBuilder authenticationManagerBuilder
+                = httpSecurity.getSharedObject(AuthenticationManagerBuilder.class);
+        authenticationManagerBuilder.userDetailsService(authService)
+                .passwordEncoder(passwordEncoder());
+        return authenticationManagerBuilder.build();
     }
 }
